@@ -1,0 +1,7 @@
+{% partialdef friend-request-btn %}
+
+<button class="btn btn-add" hx-target="this" hx-post ="{% url 'friends:send_friendrequest' user.username %}" hx-swap="innerHTML" hx-trigger="click">
+    + Add Friend
+</button>
+
+{% endpartialdef %}

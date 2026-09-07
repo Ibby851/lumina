@@ -1,0 +1,269 @@
+{% load static tags friends_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search — Lumina</title>
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f0f13;
+      color: #f8fafc;
+    }
+    h1, h2, h3, h4, .navbar-brand {
+      font-family: 'Outfit', sans-serif;
+    }
+    .navbar {
+      background: rgba(15, 15, 19, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .navbar-brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-link {
+      color: #94a3b8 !important;
+      font-weight: 500;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: #fff !important;
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 6px 16px;
+      font-size: 0.9rem;
+    }
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
+    .search-input-wrap {
+      position: relative;
+    }
+    .search-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      color: #f8fafc;
+      padding: 14px 52px 14px 20px;
+      font-size: 1.05rem;
+      transition: all 0.25s ease;
+    }
+    .search-box:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+      color: #fff;
+      outline: none;
+    }
+    .search-spinner {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 3px solid rgba(167, 139, 250, 0.18);
+      border-top-color: #a78bfa;
+      border-right-color: #22d3ee;
+      border-bottom-color: #7c3aed;
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15), 0 0 18px rgba(34, 211, 238, 0.28);
+      opacity: 0;
+      visibility: hidden;
+      display: inline-block;
+      transition: opacity 180ms ease, visibility 180ms ease, box-shadow 180ms ease;
+      animation: spin 0.7s linear infinite;
+      pointer-events: none;
+    }
+    .search-input-wrap.loading .search-spinner {
+      opacity: 1;
+      visibility: visible;
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2), 0 0 22px rgba(34, 211, 238, 0.38);
+    }
+    .results-loader {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      min-height: 180px;
+      width: 100%;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      margin-top: 12px;
+    }
+    .results-loader.visible {
+      display: flex;
+    }
+    .results-spinner {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 5px solid rgba(167, 139, 250, 0.15);
+      border-top-color: #a78bfa;
+      border-right-color: #22d3ee;
+      border-bottom-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.08), 0 0 30px rgba(34, 211, 238, 0.25);
+      animation: spin-large 0.9s linear infinite;
+    }
+    @keyframes spin {
+      from {
+        transform: translateY(-50%) rotate(0deg);
+      }
+      to {
+        transform: translateY(-50%) rotate(360deg);
+      }
+    }
+    @keyframes spin-large {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    .user-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 18px;
+      padding: 1.4rem;
+      transition: all 0.25s ease;
+    }
+    .user-card:hover {
+      border-color: rgba(124, 58, 237, 0.4);
+      background: rgba(124, 58, 237, 0.07);
+      transform: translateY(-3px);
+    }
+    .avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#22d3ee); object-fit: cover; position: relative; overflow: visible; flex: 0 0 52px; }
+    .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .btn-add {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: none;
+      color: white;
+      font-weight: 500;
+      border-radius: 10px;
+      padding: 7px 16px;
+      font-size: 0.9rem;
+    }
+    .btn-add:hover {
+      color: white;
+      opacity: 0.9;
+    }
+    .btn-outline-custom {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 7px 16px;
+      font-size: 0.9rem;
+      background: transparent;
+    }
+    .btn-outline-custom:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: white;
+    }
+    .btn-pending {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      border-radius: 10px;
+      padding: 7px 16px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="">Lumina</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:home' %}">Feed</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'friends:friends_list' %}">Friends</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'friends:friend_requests' %}">Requests</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'chats:chat_list'%}">Chat</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{% url 'accounts:search' %}">Search</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:profile_view' %}">Profile</a></li>
+        </ul>
+        <a href="{% url 'accounts:logout' %}" class="btn btn-logout">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <h2 class="mb-4">Search People</h2>
+
+        <!-- Search Input -->
+        <div class="mb-5 search-input-wrap">
+          <input type="text" class="form-control search-box" placeholder="Search by name or username..." autofocus hx-get="{% url 'accounts:search_query_handler' %}" name="query" hx-trigger="keyup changed delay:500ms" hx-target="#user-cards-div" hx-swap="innerHTML" hx-on::before-request="this.closest('.search-input-wrap').classList.add('loading'); document.getElementById('results-loader').classList.add('visible')" hx-on::after-request="this.closest('.search-input-wrap').classList.remove('loading'); document.getElementById('results-loader').classList.remove('visible')">
+          <span id="search-spinner" class="search-spinner" aria-label="Loading search results" title="Loading"></span>
+        </div>
+
+        <!-- Search Results -->
+        <div class="d-flex flex-column gap-3" id="user-cards-div">
+          <div class="results-loader" id="results-loader">
+            <div class="results-spinner" aria-label="Loading search results" title="Loading"></div>
+          </div>
+
+          <!-- User Result 1 -->
+          {% for user in users %}
+            <div class="user-card d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-3">
+              <div class="avatar">
+                <img src="{% if user.profile.profile_photo %}{{ user.profile.profile_photo.url }}{% else %}{% static 'user-default.jpg' %}{% endif %}" alt="Sarah Johnson profile photo">
+                <span class="status-dot online" title="Online" aria-label="Online"></span>
+              </div>
+                <div>
+                  <h5 class="mb-0">{{ user.get_full_name }}</h5>
+                  <small class="text-secondary">@{{ user.username }}</small>
+                  <p class="mb-0 mt-1 text-secondary small">• {% mutual_friends user request.user%} mutual friends</p>
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{% url 'accounts:view_others_profile' user.username %}" class="btn btn-outline-custom">View Profile</a>
+                {% if not request.user|check_already_friend:user %}
+                  <button class="btn btn-add " hx-target="this" hx-post ="{% url 'friends:send_friendrequest' user.username%}" hx-swap="innerHTML" hx-trigger="click">
+                    {% check_friendship request.user user%}
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+
+        </div>
+
+        <!-- Empty State (Hidden by default - show when no results) -->
+        <!-- 
+        <div class="text-center py-5">
+          <h4 class="text-secondary mb-2">No users found</h4>
+          <p class="text-secondary">Try searching with a different name or username</p>
+        </div>
+        -->
+
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

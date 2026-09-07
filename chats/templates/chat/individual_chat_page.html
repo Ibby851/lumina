@@ -1,0 +1,81 @@
+{% load static %}
+{% load humanize %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat with {{ friend.username }} - Lumina</title>
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <script src="{% static 'js/socket.min.js' %}"></script>
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'js/ws.js' %}"></script>
+  <script src="{% static 'js/json-enc.js' %}"></script>
+  <script src="{% static 'js/_hyperscript.min.js'%}"></script>
+  <style>
+    :root { --lumina-violet: #7c3aed; --lumina-violet-dark: #6d28d9; --lumina-cyan: #22d3ee; --lumina-ink: #f8fafc; --lumina-muted: #94a3b8; --lumina-panel: #13131b; --lumina-in: #242431; --lumina-out: linear-gradient(135deg, #7c3aed, #6d28d9); }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; overflow: hidden; background: #0f0f13; color: var(--lumina-ink); font-family: Arial, Helvetica, sans-serif; }
+    .chat-app { width: min(100%, 1440px); height: 100dvh; margin: 0 auto; display: flex; flex-direction: column; background: var(--lumina-panel); box-shadow: 0 0 24px rgba(0,0,0,.35); }
+    .chat-header { min-height: 70px; padding: .7rem clamp(.75rem,2vw,1.5rem); color: #fff; background: linear-gradient(135deg, #171322, #101820); border-bottom: 1px solid rgba(255,255,255,.08); }
+    .back-link, .header-icon, .composer-icon { color: inherit; border: 0; background: transparent; text-decoration: none; }
+    .back-link:hover, .header-icon:hover, .composer-icon:hover { color: var(--lumina-cyan); }
+    .back-link { font-size: 1.5rem; line-height: 1; }
+    .header-icon { padding: .35rem .5rem; font-size: 1.35rem; }
+    .avatar { width: 44px; height: 44px; flex: 0 0 44px; overflow: hidden; border: 2px solid rgba(167,139,250,.7); border-radius: 50%; background: linear-gradient(135deg,var(--lumina-violet),var(--lumina-cyan)); }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .person-name { max-width: 48vw; font-size: 1rem; font-weight: 600; }
+    .person-status { color: #86efac; font-size: .78rem; }
+    .messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 1rem clamp(.75rem,4vw,4rem); background-color: var(--lumina-panel); background-image: radial-gradient(rgba(167,139,250,.08) 1px, transparent 1px); background-size: 18px 18px; scrollbar-width: thin; }
+    .date-divider { width: fit-content; margin: .4rem auto 1rem; padding: .35rem .75rem; border: 1px solid rgba(167,139,250,.16); border-radius: .5rem; color: var(--lumina-muted); background: rgba(255,255,255,.06); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+    .message-row { display: flex; width: 100%; margin-bottom: .35rem; }
+    .message-row.sent { justify-content: flex-end; }
+    .message-row.received { justify-content: flex-start; }
+    .message-bubble { max-width: min(75%,680px); padding: .45rem .65rem .35rem; border-radius: .5rem; color: var(--lumina-ink); font-size: .93rem; line-height: 1.4; overflow-wrap: anywhere; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+    .message-row.sent .message-bubble { margin-left: auto; background: var(--lumina-out); border-bottom-right-radius: .15rem; }
+    .message-row.received .message-bubble { margin-right: auto; background: var(--lumina-in); border: 1px solid rgba(255,255,255,.07); border-bottom-left-radius: .15rem; }
+    .message-meta { float: right; margin: .35rem 0 0 .75rem; color: rgba(248,250,252,.62); font-size: .66rem; white-space: nowrap; }
+    .composer { padding: .65rem clamp(.65rem,2vw,1.5rem); background: #0f0f13; border-top: 1px solid rgba(255,255,255,.08); }
+    .composer-form { display: flex; align-items: flex-end; gap: .5rem; }
+    .composer-icon { flex: 0 0 auto; padding: .55rem; color: var(--lumina-muted); font-size: 1.25rem; }
+    .composer-input { min-height: 44px; max-height: 120px; resize: none; border: 1px solid rgba(255,255,255,.1); border-radius: 1.4rem; color: #fff; background: rgba(255,255,255,.07); }
+    .composer-input::placeholder { color: #64748b; }
+    .composer-input:focus { color: #fff; background: rgba(255,255,255,.09); border-color: var(--lumina-violet); box-shadow: 0 0 0 .15rem rgba(124,58,237,.2); }
+    .send-button { width: 44px; height: 44px; flex: 0 0 44px; padding: 0; border: 0; border-radius: 50%; color: #fff; background: linear-gradient(135deg,var(--lumina-violet),var(--lumina-violet-dark)); font-size: 1.1rem; }
+    .send-button:hover { background: linear-gradient(135deg,#8b5cf6,var(--lumina-violet)); }
+    @media (min-width: 900px) { .chat-app { height: calc(100dvh - 32px); margin-top: 16px; border-radius: .25rem; overflow: hidden; } }
+    @media (max-width: 575.98px) { .chat-header { min-height: 62px; } .avatar { width: 38px; height: 38px; flex-basis: 38px; } .message-bubble { max-width: 88%; font-size: .9rem; } .messages { padding: .75rem .55rem; } .composer-icon.attach { display: none; } }
+  </style>
+</head>
+<body>
+  <main class="chat-app">
+    <header class="chat-header d-flex align-items-center gap-2">
+      <a class="back-link px-1" href="{% url 'chats:chat_list' %}" aria-label="Back to chats">&#8249;</a>
+      <div class="avatar"><img src="{% if friend_profile.profile_photo %}{{ friend_profile.profile_photo.url }}{% else %}{% static 'user-default.jpg' %}{% endif %}" alt="{{ friend.username }} profile photo"></div>
+      <div class="flex-grow-1 overflow-hidden"><div class="person-name text-truncate">{{ friend.get_full_name|default:friend.username }}</div><div class="person-status">online</div></div>
+      <div class="d-flex align-items-center"><button class="header-icon" type="button" aria-label="Search">&#128269;</button><button class="header-icon" type="button" aria-label="More options">&#8942;</button></div>
+    </header>
+    <section class="messages" id="messages_list" aria-label="Conversation with {{ friend.username }}">
+      {% for chat in chats %}
+        {% ifchanged chat.created_at.date %}<div class="date-divider">{{ chat.created_at|naturalday }}</div>{% endifchanged %}
+        <div class="message-row {% if chat.sender == request.user %}sent{% else %}received{% endif %}"><div class="message-bubble">{{ chat.content|linebreaksbr }}<small class="message-meta">{{ chat.created_at|naturaltime }}</small></div></div>
+      {% empty %}
+        <div class="h-100 d-flex align-items-center justify-content-center text-secondary small">Start a conversation</div>
+      {% endfor %}
+    </section>
+    <footer class="composer">
+      <form class="composer-form" hx-ext="ws, json-enc" ws-connect="/ws/chat-with/{{ friend.id }}/" ws-send _="on htmx:wsAfterMessage reset me end">
+        {% csrf_token %}
+        <button class="composer-icon attach" type="button" aria-label="Attach file">&#128206;</button>{% render_field form.content class="form-control composer-input" rows="1" placeholder="Type a message" autocomplete="off" %}<button class="send-button" type="submit" aria-label="Send message">&#10148;</button>
+      </form>
+    </footer>
+  </main>
+  <script>
+    function scrollMessages() { const messages = document.getElementById('messages_list'); if (messages) messages.scrollTop = messages.scrollHeight; }
+    document.addEventListener('DOMContentLoaded', scrollMessages);
+    document.body.addEventListener('htmx:wsAfterMessage', scrollMessages);
+  </script>
+</body>
+</html>

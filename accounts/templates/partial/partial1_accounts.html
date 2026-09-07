@@ -1,0 +1,92 @@
+{% load static %}
+{% load tags %}
+{% load friends_tags %}
+{% partialdef search-query-result %}
+{% load widget_tweaks %}
+    {% for user in users %}
+        <div class="user-card d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+            <div class="avatar">
+            <img src="{% if user.profile.profile_photo %}{{ user.profile.profile_photo.url }}{% else %}{% static 'user-default.jpg' %}{% endif %}" alt="Sarah Johnson profile photo">
+            <span class="status-dot online" title="Online" aria-label="Online"></span>
+            </div>
+            <div>
+                <h5 class="mb-0">{{ user.get_full_name }}</h5>
+                <small class="text-secondary">@{{ user.username }}</small>
+                <p class="mb-0 mt-1 text-secondary small">• {% mutual_friends user request.user%} mutual friends</p>
+            </div>
+            </div>
+            <div class="d-flex gap-2">
+            <a href="{% url 'accounts:view_others_profile' user.username %}" class="btn btn-outline-custom">View Profile</a>
+            {% if not request.user|check_already_friend:user %}
+                <button class="btn btn-add " hx-target="this" hx-post ="{% url 'friends:send_friendrequest' user.username%}" hx-swap="innerHTML" hx-trigger="click">
+                {% check_friendship request.user user%}
+                </button>
+            {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="text-center py-5">
+          <h4 class="text-secondary mb-2">No users found</h4>
+          <p class="text-secondary">Try searching with a different name or username</p>
+        </div>
+    {% endfor %}
+{% endpartialdef %}
+
+
+{% partialdef failed-form %}
+    <form class="p-3 d-flex flex-column gap-3" hx-post="{% url 'accounts:create_post' %}" hx-target="#feed-cards-box" hx-swap="afterbegin" enctype="multipart/form-data" id="form">
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}
+            <div class="alert alert-danger py-2" role="alert">{{ error }}</div>
+        {% endfor %}
+        <div class="d-flex align-items-center justify-content-between">
+        <span class="fw-semibold text-white">Create Post</span>
+        <button type="button" class="btn btn-outline-light rounded-circle p-2" id="composerClose" aria-label="Close composer" style="width: 32px; height: 32px; line-height: 1;">×</button>
+        </div>
+
+        <!-- <textarea class="form-control bg-dark text-white border-secondary" rows="4" placeholder="What's on your mind?"></textarea> -->
+        {% render_field form.text class="form-control bg-dark text-white border-secondary" rows="5" placeholder="What is on your mind?" %}
+
+        <div class="row g-2">
+        <div class="col-4">
+            <div class="position-relative border border-secondary rounded-3 overflow-hidden bg-dark-subtle">
+            <!-- <input type="file" id="audioUpload" accept="audio/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0"> -->
+            {% render_field form.audio type="file" id="audioUpload" accept="audio/mp4,audio/wav,audio/ogg,audio/mpeg" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" %}
+            <label for="audioUpload" class="d-flex align-items-center justify-content-center gap-2 text-light py-2 px-2 mb-0" style="cursor: pointer;">
+                <span class="badge rounded-circle bg-primary d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">♫</span>
+                Audio
+            </label>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="position-relative border border-secondary rounded-3 overflow-hidden bg-dark-subtle">
+            <!-- <input type="file" id="videoUpload" accept="video/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0"> -->
+                {% render_field form.video type="file" id="videoUpload" accept="video/mp4,video/webm,video/quicktime" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" %}
+            <label for="videoUpload" class="d-flex align-items-center justify-content-center gap-2 text-light py-2 px-2 mb-0" style="cursor: pointer;">
+                <span class="badge rounded-circle bg-info d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">▶</span>
+                Video
+            </label>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="position-relative border border-secondary rounded-3 overflow-hidden bg-dark-subtle">
+            <!-- <input type="file" id="imageUpload" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0"> -->
+            {% render_field form.image type="file" id="imageUpload" accept="image/jpeg,image/png,image/webp" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" %}
+
+            <label for="imageUpload" class="d-flex align-items-center justify-content-center gap-2 text-light py-2 px-2 mb-0" style="cursor: pointer;">
+                <span class="badge rounded-circle bg-success d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">◼</span>
+                Image
+            </label>
+            </div>
+        </div>
+        </div>
+
+        <div class="media-preview" id="mediaPreview"></div>
+
+        <div class="d-flex justify-content-end gap-2 mt-1">
+        <button type="button" class="btn btn-outline-light btn-sm" id="composerCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm px-3">Post</button>
+        </div>
+    </form>
+{% endpartialdef %}

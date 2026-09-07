@@ -1,0 +1,184 @@
+
+{% load static widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Lumina</title>
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f0f13;
+      color: #f8fafc;
+      min-height: 100vh;
+      padding-top: 72px;
+    }
+    .navbar {
+      background: rgba(15, 15, 19, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .navbar.fixed-top {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 1030;
+    }
+    .navbar-brand {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-link {
+      color: #94a3b8 !important;
+      font-weight: 500;
+    }
+    .nav-link:hover {
+      color: #fff !important;
+    }
+    .btn-primary-custom {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);
+    }
+    .btn-primary-custom:hover {
+      color: white;
+      box-shadow: 0 12px 28px rgba(124, 58, 237, 0.5);
+    }
+    .brand {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+    }
+    .login-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 2.8rem;
+      width: 100%;
+      max-width: 440px;
+      backdrop-filter: blur(12px);
+    }
+    .login-page {
+      min-height: calc(100vh - 72px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .form-control {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+      color: #fff;
+    }
+    .form-control.is-invalid {
+      border-color: #ef4444;
+      background-image: none;
+    }
+    .invalid-feedback {
+      color: #fca5a5;
+    }
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      border-radius: 10px;
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 13px;
+      border-radius: 12px;
+      width: 100%;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      color: white;
+    }
+    a { color: #a78bfa; text-decoration: none; }
+    a:hover { color: #c4b5fd; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'accounts:index' %}">Lumina</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:index' %}#features">Features</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{% url 'accounts:login' %}">Login</a></li>
+          <li class="nav-item ms-lg-3">
+            <a href="{% url 'accounts:register' %}" class="btn btn-primary-custom btn-sm">Get Started</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="login-page">
+    <div class="login-card">
+      <div class="brand mb-2">Lumina</div>
+    <h2 class="text-center mb-1" style="font-family: 'Outfit';">Welcome back</h2>
+    <p class="text-center text-secondary mb-4">Sign in to continue to your conversations</p>
+
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      {% for error in form.non_field_errors %}
+        <div class="alert alert-danger py-2" role="alert">{{ error }}</div>
+      {% endfor %}
+      <div class="mb-3">
+        <label class="form-label">Username / Email</label>
+        {% if form.username.errors %}{% render_field form.username class="form-control is-invalid" placeholder="you@example.com" required="required" %}{% else %}{% render_field form.username class="form-control" placeholder="you@example.com" required="required" %}{% endif %}
+        {% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-3">
+        <div class="d-flex justify-content-between">
+          <label class="form-label">Password</label>
+          <a href="{% url 'accounts:reset_password' %}" style="font-size: 0.85rem;">Forgot password?</a>
+        </div>
+        {% if form.password.errors %}{% render_field form.password class="form-control is-invalid" type="password" placeholder="Enter your password" required="required" %}{% else %}{% render_field form.password class="form-control" type="password" placeholder="Enter your password" required="required" %}{% endif %}
+        {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="mb-4 form-check">
+        <input type="checkbox" class="form-check-input" id="remember">
+        <label class="form-check-label text-secondary" for="remember">Remember me</label>
+      </div>
+      <button type="submit" class="btn btn-login">Sign In</button>
+    </form>
+
+    <p class="text-center mt-4 mb-0 text-secondary">
+      Don’t have an account? <a href="{% url 'accounts:register' %}">Create one</a>
+    </p>
+    </div>
+  </main>
+</body>
+</html>

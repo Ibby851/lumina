@@ -1,0 +1,13 @@
+{% load humanize %}
+
+{% partialdef websocket-message %}
+    {% if is_sender %}
+        <div class="message-row sent" hx-swap-oob="beforeend" id="messages_list">
+            <div class="message-bubble">{{ message.content | linebreaksbr }} <small class="message-meta">{{ message.created_at|naturaltime}}</small></div>
+        </div>
+    {% else %}
+        <div class="message-row received" hx-swap-oob="beforeend" id="messages_list">
+            <div class="message-bubble">{{ message.content | linebreaksbr }} <small class="message-meta">{{ message.created_at|naturaltime}}</small></div>
+        </div>
+    {% endif %}
+{% endpartialdef %}

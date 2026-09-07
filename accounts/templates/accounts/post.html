@@ -1,0 +1,47 @@
+{% load static %}
+
+<article class="feed-card post-card mb-3">
+	<div class="d-flex align-items-center gap-3 mb-3">
+		<div class="avatar">
+			{% if post.author.profile.profile_photo %}
+				<img src="{{ post.author.profile.profile_photo.url }}" alt="{{ post.author.username }} profile photo">
+			{% endif %}
+			<span class="status-dot online" title="Online" aria-label="Online"></span>
+		</div>
+		<div class="flex-grow-1 min-width-0">
+			<h6 class="mb-0 text-truncate">{{ post.author.get_full_name|default:post.author.username }}</h6>
+			<small class="text-secondary">{{ post.created_at|date:"M j, Y" }}</small>
+		</div>
+		{% if show_delete %}
+			<button type="button" class="btn btn-sm btn-outline-danger delete-post-btn" data-post-id="{{ post.id }}" data-action="delete-post" aria-label="Delete post from {{ post.created_at|date:'M j, Y' }}">Delete</button>
+		{% endif %}
+	</div>
+
+	{% if post.text %}
+		<p class="post-text mb-3">{{ post.text|linebreaksbr }}</p>
+	{% endif %}
+
+	{% if post.image %}
+		<div class="post-media mb-3">
+			<img src="{{ post.image.url }}" alt="Image shared by {{ post.author.username }}" loading="lazy">
+		</div>
+	{% endif %}
+
+	{% if post.video %}
+		<div class="post-media mb-3">
+			<video controls preload="metadata" playsinline>
+				<source src="{{ post.video.url }}">
+				Your browser does not support video playback.
+			</video>
+		</div>
+	{% endif %}
+
+	{% if post.audio %}
+		<div class="post-media post-audio mb-0">
+			<audio controls preload="metadata">
+				<source src="{{ post.audio.url }}">
+				Your browser does not support audio playback.
+			</audio>
+		</div>
+	{% endif %}
+</article>
