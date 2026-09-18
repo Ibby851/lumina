@@ -16,5 +16,9 @@ urlpatterns = [
     path('view-profile/<str:username>/', views.view_others_profile, name='view_others_profile'),
     path('search-users/', views.search, name='search'),
     path('find-user/', views.search_user_query_handler, name='search_query_handler'),
-    path('create-post/', views.create_post, name='create_post')
+    path('create-post/', views.create_post, name='create_post'),
+    path('request-new-verification/', views.request_new_verification_token, name='request_new_verification_token'),
+    path('user-verification/<str:token>/', views.verify_user, name='verify_user'),
+    path('password-reset-input/<str:token>', views.password_reset_input, name='password_reset_input'),
+    path('password-reset-handler/<str:reset_token>', views.password_reset_handler, name='password_reset_handler')
 ]

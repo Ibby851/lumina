@@ -45,11 +45,32 @@
     .composer-input:focus { color: #fff; background: rgba(255,255,255,.09); border-color: var(--lumina-violet); box-shadow: 0 0 0 .15rem rgba(124,58,237,.2); }
     .send-button { width: 44px; height: 44px; flex: 0 0 44px; padding: 0; border: 0; border-radius: 50%; color: #fff; background: linear-gradient(135deg,var(--lumina-violet),var(--lumina-violet-dark)); font-size: 1.1rem; }
     .send-button:hover { background: linear-gradient(135deg,#8b5cf6,var(--lumina-violet)); }
+    .file-composer { display: flex; align-items: center; gap: .5rem; margin-top: .55rem; padding: .35rem .45rem .35rem .7rem; border: 1px solid rgba(255,255,255,.1); border-radius: 1.4rem; background: rgba(255,255,255,.04); }
+    .file-input { min-width: 0; flex: 1 1 auto; color: var(--lumina-muted); font-size: .8rem; }
+    .file-input::file-selector-button { margin-right: .6rem; padding: .35rem .65rem; border: 1px solid rgba(34,211,238,.35); border-radius: 1rem; color: #cffafe; background: rgba(34,211,238,.1); cursor: pointer; }
+    .file-send-button { flex: 0 0 auto; padding: .4rem .8rem; border: 1px solid rgba(167,139,250,.5); border-radius: 1rem; color: #fff; background: rgba(124,58,237,.7); font-size: .78rem; }
+    .file-send-button:hover { background: var(--lumina-violet); }
+    .file-link { display: inline-flex; align-items: center; gap: .45rem; color: #e9d5ff; text-decoration: none; }
+    .file-link:hover { color: #fff; text-decoration: underline; }
+    .chat-image { display: block; width: min(100%, 360px); max-height: 320px; object-fit: cover; border: 1px solid rgba(255,255,255,.18); transition: transform .2s ease, filter .2s ease; }
+    .chat-image:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .chat-video-wrap { width: min(100%, 420px); margin-top: .5rem; padding: .25rem; border: 1px solid rgba(34,211,238,.2); border-radius: .85rem; background: rgba(15,15,19,.28); overflow: hidden; }
+    .chat-video { display: block; width: 100%; max-height: 320px; border-radius: .65rem; background: #0f0f13; }
+    .chat-audio { display: flex; align-items: center; gap: .6rem; width: min(100%, 360px); min-height: 56px; margin-top: .5rem; padding: .45rem .65rem .45rem .45rem; border: 1px solid rgba(34,211,238,.2); border-radius: 1.75rem; background: rgba(15,15,19,.28); }
+    .audio-toggle { width: 38px; height: 38px; flex: 0 0 38px; padding: 0; border: 0; border-radius: 50%; color: #fff; background: linear-gradient(135deg,var(--lumina-violet),var(--lumina-violet-dark)); font-size: .9rem; }
+    .audio-toggle:hover, .audio-toggle:focus-visible { background: linear-gradient(135deg,#8b5cf6,var(--lumina-violet)); box-shadow: 0 0 0 .15rem rgba(34,211,238,.16); }
+    .audio-track { min-width: 0; flex: 1 1 auto; }
+    .audio-wave { display: flex; align-items: center; gap: 2px; height: 24px; }
+    .audio-wave span { width: 3px; border-radius: 3px; background: rgba(34,211,238,.55); }
+    .audio-wave span:nth-child(3n) { height: 16px; } .audio-wave span:nth-child(3n+1) { height: 9px; } .audio-wave span:nth-child(3n+2) { height: 21px; }
+    .audio-progress { width: 100%; height: 4px; accent-color: var(--lumina-cyan); cursor: pointer; }
+    .audio-time { min-width: 2.25rem; color: rgba(248,250,252,.68); font-size: .68rem; text-align: right; }
+    .audio-source { display: none; }
     @media (min-width: 900px) { .chat-app { height: calc(100dvh - 32px); margin-top: 16px; border-radius: .25rem; overflow: hidden; } }
     @media (max-width: 575.98px) { .chat-header { min-height: 62px; } .avatar { width: 38px; height: 38px; flex-basis: 38px; } .message-bubble { max-width: 88%; font-size: .9rem; } .messages { padding: .75rem .55rem; } .composer-icon.attach { display: none; } }
   </style>
 </head>
-<body>
+<body hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}'>
   <main class="chat-app">
     <header class="chat-header d-flex align-items-center gap-2">
       <a class="back-link px-1" href="{% url 'chats:chat_list' %}" aria-label="Back to chats">&#8249;</a>
@@ -60,22 +81,92 @@
     <section class="messages" id="messages_list" aria-label="Conversation with {{ friend.username }}">
       {% for chat in chats %}
         {% ifchanged chat.created_at.date %}<div class="date-divider">{{ chat.created_at|naturalday }}</div>{% endifchanged %}
-        <div class="message-row {% if chat.sender == request.user %}sent{% else %}received{% endif %}"><div class="message-bubble">{{ chat.content|linebreaksbr }}<small class="message-meta">{{ chat.created_at|naturaltime }}</small></div></div>
+        <div class="message-row {% if chat.sender == request.user %}sent{% else %}received{% endif %}" id="message-{{ chat.id }}">
+          <div class="message-bubble">
+            {% if chat.content %}{{ chat.content|linebreaksbr }}{% endif %}
+            {% if chat.file %}
+              {% if chat.is_image %}
+                <a class="d-block mt-2" href="{{ chat.file.url }}" target="_blank" rel="noopener" aria-label="Open image {{ chat.file.name }}">
+                  <img class="img-fluid rounded-3 shadow-sm chat-image" src="{{ chat.file.url }}" alt="{{ chat.file.name }}" loading="lazy">
+                </a>
+              {% elif chat.is_video %}
+                <div class="chat-video-wrap">
+                  <video class="chat-video" controls preload="metadata">
+                    <source src="{{ chat.file.url }}">
+                    <a class="file-link" href="{{ chat.file.url }}" target="_blank" rel="noopener">Open {{ chat.file.name }}</a>
+                  </video>
+                </div>
+              {% elif chat.is_audio %}
+                <div class="chat-audio" data-audio-player>
+                  <button class="audio-toggle" type="button" aria-label="Play audio">&#9654;</button>
+                  <div class="audio-track">
+                    <div class="audio-wave" aria-hidden="true">{% for bar in "12345678901234567890" %}<span></span>{% endfor %}</div>
+                    <input class="audio-progress" type="range" min="0" max="100" value="0" step="1" aria-label="Audio progress">
+                  </div>
+                  <span class="audio-time">0:00</span>
+                  <audio class="audio-source" preload="metadata">
+                    <source src="{{ chat.file.url }}">
+                    <a class="file-link" href="{{ chat.file.url }}" target="_blank" rel="noopener">Open {{ chat.file.name }}</a>
+                  </audio>
+                </div>
+              {% else %}
+                <a class="file-link d-block mt-2" href="{{ chat.file.url }}" target="_blank" rel="noopener">&#128206; {{ chat.file.name }}</a>
+              {% endif %}
+            {% endif %}
+            <small class="message-meta">{{ chat.created_at|naturaltime }}</small>
+            {% if chat.sender == request.user %}
+            {% endif %}
+          </div>
+        </div>
       {% empty %}
-        <div class="h-100 d-flex align-items-center justify-content-center text-secondary small">Start a conversation</div>
+        <div class="h-100 d-flex align-items-center justify-content-center text-secondary small" _="on htmx:wsAfterRequestSent add .d-none">Start a conversation</div>
       {% endfor %}
     </section>
     <footer class="composer">
-      <form class="composer-form" hx-ext="ws, json-enc" ws-connect="/ws/chat-with/{{ friend.id }}/" ws-send _="on htmx:wsAfterMessage reset me end">
+      <form class="composer-form" hx-ext="ws, json-enc" ws-connect="/ws/chat-with/{{ friend.id }}/" ws-send _="on htmx:wsAfterMessage reset me end" novalidate>
         {% csrf_token %}
-        <button class="composer-icon attach" type="button" aria-label="Attach file">&#128206;</button>{% render_field form.content class="form-control composer-input" rows="1" placeholder="Type a message" autocomplete="off" %}<button class="send-button" type="submit" aria-label="Send message">&#10148;</button>
+        <button class="composer-icon attach" type="button" aria-label="Attach file">&#128206;</button>{% render_field form.content class="form-control composer-input" rows="2" placeholder="Type a message" autocomplete="off" %}<button class="send-button" type="submit" aria-label="Send message">&#10148;</button>
+      </form>
+      <form class="file-composer"  hx-post="{% url 'chats:send_file' friend.username %}" hx-swap="none" _="on htmx:afterRequest reset me" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% render_field file_form.file class="file-input" accept="*/*" required=required %}
+        <button class="file-send-button" type="submit" aria-label="Send file">&#10148; Send file</button>
+        <div style="color:red;" id="error"></div>
       </form>
     </footer>
   </main>
   <script>
     function scrollMessages() { const messages = document.getElementById('messages_list'); if (messages) messages.scrollTop = messages.scrollHeight; }
+    function formatAudioTime(seconds) { if (!Number.isFinite(seconds)) return '0:00'; return Math.floor(seconds / 60) + ':' + String(Math.floor(seconds % 60)).padStart(2, '0'); }
+    document.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-audio-player] .audio-toggle');
+      if (!button) return;
+      const player = button.closest('[data-audio-player]');
+      const audio = player.querySelector('.audio-source');
+      document.querySelectorAll('.audio-source').forEach(function (otherAudio) {
+        if (otherAudio !== audio) { otherAudio.pause(); otherAudio.closest('[data-audio-player]').querySelector('.audio-toggle').innerHTML = '&#9654;'; }
+      });
+      if (audio.paused) { audio.play(); button.innerHTML = '&#10074;&#10074;'; button.setAttribute('aria-label', 'Pause audio'); }
+      else { audio.pause(); button.innerHTML = '&#9654;'; button.setAttribute('aria-label', 'Play audio'); }
+    });
+    document.addEventListener('input', function (event) {
+      if (!event.target.matches('[data-audio-player] .audio-progress')) return;
+      const player = event.target.closest('[data-audio-player]');
+      const audio = player.querySelector('.audio-source');
+      if (audio.duration) audio.currentTime = audio.duration * (event.target.value / 100);
+    });
+    function initializeAudioPlayers() { document.querySelectorAll('[data-audio-player]:not([data-audio-ready])').forEach(function (player) {
+      player.setAttribute('data-audio-ready', 'true');
+      const audio = player.querySelector('.audio-source');
+      const progress = player.querySelector('.audio-progress');
+      const time = player.querySelector('.audio-time');
+      audio.addEventListener('loadedmetadata', function () { time.textContent = formatAudioTime(audio.duration); });
+      audio.addEventListener('timeupdate', function () { progress.value = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0; time.textContent = formatAudioTime(audio.duration - audio.currentTime); });
+      audio.addEventListener('ended', function () { player.querySelector('.audio-toggle').innerHTML = '&#9654;'; player.querySelector('.audio-toggle').setAttribute('aria-label', 'Play audio'); progress.value = 0; time.textContent = formatAudioTime(audio.duration); });
+    }); }
+    initializeAudioPlayers();
     document.addEventListener('DOMContentLoaded', scrollMessages);
-    document.body.addEventListener('htmx:wsAfterMessage', scrollMessages);
+    document.body.addEventListener('htmx:wsAfterMessage', function () { initializeAudioPlayers(); scrollMessages(); });
   </script>
 </body>
 </html>

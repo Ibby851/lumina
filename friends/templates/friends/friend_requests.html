@@ -201,8 +201,8 @@
           </div>
         </div>
         <div class="request-actions d-flex gap-2">
-          <button class="btn btn-sm btn-request btn-accept" hx-post="{% url 'friends:handle_friendrequest' received_request.sender.username 'accept' %}" hx-target="this" hx-swap="innerHTML">Accept</button>
-          <button class="btn btn-sm btn-request btn-outline-secondary" hx-post="{% url 'friends:handle_friendrequest' received_request.sender.username 'decline' %}" hx-target="#received-{{ received_request.sender.username }}" hx-swap="outerHTML">Decline</button>
+          <button class="btn btn-sm btn-request btn-accept" hx-post="{% url 'friends:handle_friendrequest' received_request.sender.username 'accept' %}" hx-target="this" hx-swap="outerHTML">Accept</button>
+          <button class="btn btn-sm btn-request btn-outline-secondary" hx-post="{% url 'friends:handle_friendrequest' received_request.sender.username 'decline' %}" hx-target="#received-{{ received_request.sender.username }}" hx-swap="outerHTML" _="on friendRequestAccepted add .d-none to me end">Decline</button>
         </div>
       </div>
 

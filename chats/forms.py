@@ -7,3 +7,9 @@ class MessageCreateForm(forms.ModelForm):
         model=IndividualChat
         fields=['content']
 
+
+class FileMessageForm(forms.ModelForm):
+    class Meta:
+        model = IndividualChat
+        fields = ['file']
+

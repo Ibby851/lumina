@@ -105,3 +105,34 @@ class PostCreateForm(forms.ModelForm):
         if not any([data.get('text'), data.get('audio'), data.get('video'), data.get('image')]):
             raise forms.ValidationError('Your post must contain at least a text, an image, a video or an audio.')
         return data
+
+class VerificationTokenRequestForm(forms.Form):
+    email = forms.EmailField()
+
+class PasswordResetEmailForm(forms.Form):
+    email = forms.EmailField()
+
+class PasswordResetInput(forms.Form):
+    password1 = forms.CharField(widget=forms.PasswordInput())
+    password2 = forms.CharField(widget=forms.PasswordInput())
+
+    def clean_password1(self):
+        value = self.cleaned_data.get('password1')
+        if len(value) < 5:
+            self.add_error('password1', 'Password too short')
+        return value
+
+    def clean_password2(self):
+        value = self.cleaned_data.get('password2')
+        if len(value) < 5:
+            self.add_error('password2', 'Password too short')
+        return value
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+        if password1 != password2:
+            self.add_error(None,'Password did not match.')
+        return cleaned_data
+        

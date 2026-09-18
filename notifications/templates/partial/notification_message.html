@@ -1,0 +1,23 @@
+{% load static %}
+{% partialdef notification-return %}
+	<article class="lumina-notification d-flex align-items-center gap-3 shadow-sm" role="status" aria-live="polite" hx-target="#notifier" hx-swap="beforebegin">
+		<div class="lumina-notification__avatar flex-shrink-0" aria-hidden="true">
+			{% if user.profile.profile_photo %}
+				<img src="{{ user.profile.profile_photo.url }}" alt="" loading="lazy">
+			{% else %}
+				<span>✦</span>
+			{% endif %}
+		</div>
+
+		<div class="lumina-notification__body flex-grow-1">
+			<p class="lumina-notification__eyebrow">Lumina update</p>
+			<h2 class="lumina-notification__title">New friend request</h2>
+			<p class="lumina-notification__text">You have a new friend request from {{ user.username }}. Visit your friends page to respond.</p>
+			<time class="lumina-notification__time"></time>
+		</div>
+
+		<button class="lumina-notification__close btn btn-sm p-0" type="button" aria-label="Dismiss notification" onclick="this.closest('.lumina-notification').remove()">&times;</button>
+	</article>
+
+{% endpartialdef %}
+

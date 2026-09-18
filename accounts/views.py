@@ -1,4 +1,7 @@
+
+
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -6,9 +9,11 @@ from django.db.models.functions import Lower
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
-from .forms import LoginForm, ProfileEditForm, RegistrationForm, PostCreateForm
-from .models import Profile, Post
-import time
+from .forms import LoginForm, ProfileEditForm, RegistrationForm, PostCreateForm, VerificationTokenRequestForm, PasswordResetEmailForm, PasswordResetInput
+from .models import Profile, Post, Token, PasswordResetToken
+from django_q.tasks import async_task
+from .tasks import send_verification_email, send_password_reset_email
+import secrets
 
 # Create your views here.
 
@@ -19,9 +24,12 @@ def register(request):
     form = RegistrationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
-        new_user = User.objects.create_user(username=data.get('username'), email=data.get('email'), password=data.get('password'), first_name=data.get('first_name'),last_name=data.get('last_name'))
+        new_user = User.objects.create_user(username=data.get('username'), email=data.get('email'), password=data.get('password'), first_name=data.get('first_name'),last_name=data.get('last_name'), is_active=False)
         Profile.objects.create(user=new_user)
-        return redirect('accounts:login')
+        token = Token.objects.create(user=new_user, token=secrets.token_urlsafe(32))
+        url = reverse('accounts:verify_user',kwargs={'token':token.token})
+        async_task(send_verification_email, new_user.id, request.build_absolute_uri(url))
+        return render(request,'accounts/email_sent_message.html')
 
     return render(request, 'accounts/register.html', {'form':form})
 
@@ -43,7 +51,79 @@ def login(request):
     return render(request,'accounts/login.html', {'form':form})
 
 def reset_password(request):
-    return render(request, 'accounts/password_reset_form.html')
+    if request.method == 'POST':
+        form = PasswordResetEmailForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            if User.objects.filter(email=email).exists():
+                user = User.objects.get(email=email)
+                reset_token = PasswordResetToken.objects.create(user=user, token=secrets.token_urlsafe(32))
+                url = reverse('accounts:password_reset_input', kwargs={'token':reset_token.token})
+                async_task(send_password_reset_email, user.id, request.build_absolute_uri(url))
+                return render(request,'accounts/password_reset_link_sent_success.html')
+                
+            else:
+                form.add_error(None, 'Invalid Email')
+                return render(request, 'accounts/password_reset_form.html', {'form':form})
+    form = PasswordResetEmailForm()
+    return render(request, 'accounts/password_reset_form.html', {'form':form})
+
+
+def password_reset_input(request, token):
+    form = PasswordResetEmailForm()
+    if PasswordResetToken.objects.filter(token=token).exists():
+        token = PasswordResetToken.objects.get(token=token)
+        if token.is_valid():
+            form = PasswordResetInput()
+            return render(request, 'accounts/password_reset_password_input.html',{'form':form, 'token':token.token})
+        else:
+            token.delete()
+            return render(request, 'accounts/password_reset_form.html', {'error':'Invalid Password Reset Token, Try Again!!', 'form':form})
+    return render(request, 'accounts/password_reset_form.html', {'error':'Invalid Password Reset Token, Try Again!!', 'form':form})
+
+def password_reset_handler(request, reset_token):
+    token = PasswordResetToken.objects.get(token=reset_token)
+    if request.method == 'POST':
+        form = PasswordResetInput(request.POST)
+        if form.is_valid():
+            user = token.user
+            user.set_password(form.cleaned_data.get('password1'))
+            user.save()
+            token.delete()
+            return render(request,'accounts/password_reset_success.html')
+        else:
+            return render(request, 'accounts/password_reset_password_input.html', {'form':form, 'token':token.token})
+
+
+
+def verify_user(request, token):
+    form = VerificationTokenRequestForm()
+    if Token.objects.filter(token=token).exists():
+        token = Token.objects.get(token=token)
+        if token.is_valid():
+            user = token.user
+            user.is_active = True
+            user.save()
+            token.delete()
+            return render(request, 'accounts/success_verification.html')
+        token.delete()
+        return render(request,'accounts/token_verification_failed.html', {'form':form})
+    else:
+        return render(request,'accounts/token_verification_failed.html', {'form':form})
+
+def request_new_verification_token(request):
+    form = VerificationTokenRequestForm(request.POST)
+    if form.is_valid():
+        email = form.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            token = Token.objects.create(user=user, token=secrets.token_urlsafe(32))
+            url = reverse("accounts:verify_user", kwargs={'token':token.token})
+            async_task(send_verification_email, user.id, request.build_absolute_uri(url))
+            return render(request,'accounts/email_sent_message.html')
+    form.add_error(None,"No user with the email supplied")
+    return render(request,'accounts/token_verification_failed.html', {'form':form})
+
 
 @login_required
 def home(request):

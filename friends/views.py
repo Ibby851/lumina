@@ -1,10 +1,13 @@
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from friends.models import FriendRequest
 from django.template.loader import render_to_string
-# Create your views here.
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+# Create your views here
 
 @login_required
 def friend_requests(request):
@@ -39,7 +42,10 @@ def accept_or_decline_friendrequest(request, sender_username ,action):
         receiver.profile.friends.add(sender)
         sender.profile.friends.add(receiver)
         friend_request_obj.delete()
-        return HttpResponse('Accepted ✓')
+        response_html = "<button class='btn btn-sm btn-request btn-accept'>Accepted ✓</button>"
+        response = HttpResponse(response_html)
+        response["HX-Trigger"] = 'friendRequestAccepted'
+        return response
 
 @login_required
 def cancel_friend_request(request, receiver_username):

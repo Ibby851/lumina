@@ -2,12 +2,81 @@
 
 {% partialdef websocket-message %}
     {% if is_sender %}
-        <div class="message-row sent" hx-swap-oob="beforeend" id="messages_list">
-            <div class="message-bubble">{{ message.content | linebreaksbr }} <small class="message-meta">{{ message.created_at|naturaltime}}</small></div>
+        <div hx-swap-oob="beforeend:#messages_list">
+            <div class="message-row sent" id="message-{{ message.id }}">
+                <div class="message-bubble">
+                    {% if message.content %}{{ message.content|linebreaksbr }}{% endif %}
+                    {% if message.file %}
+                        {% if message.is_image %}
+                            <a class="d-block mt-2" href="{{ message.file.url }}" target="_blank" rel="noopener" aria-label="Open image {{ message.file.name }}">
+                                <img class="img-fluid rounded-3 shadow-sm chat-image" src="{{ message.file.url }}" alt="{{ message.file.name }}">
+                            </a>
+                        {% elif message.is_video %}
+                            <div class="chat-video-wrap">
+                                <video class="chat-video" controls preload="metadata">
+                                    <source src="{{ message.file.url }}">
+                                    <a class="file-link" href="{{ message.file.url }}" target="_blank" rel="noopener">Open {{ message.file.name }}</a>
+                                </video>
+                            </div>
+                        {% elif message.is_audio %}
+                            <div class="chat-audio" data-audio-player>
+                                <button class="audio-toggle" type="button" aria-label="Play audio">&#9654;</button>
+                                <div class="audio-track">
+                                    <div class="audio-wave" aria-hidden="true">{% for bar in "12345678901234567890" %}<span></span>{% endfor %}</div>
+                                    <input class="audio-progress" type="range" min="0" max="100" value="0" step="1" aria-label="Audio progress">
+                                </div>
+                                <span class="audio-time">0:00</span>
+                                <audio class="audio-source" preload="metadata">
+                                    <source src="{{ message.file.url }}">
+                                    <a class="file-link" href="{{ message.file.url }}" target="_blank" rel="noopener">Open {{ message.file.name }}</a>
+                                </audio>
+                            </div>
+                        {% else %}
+                            <a class="file-link d-block mt-2" href="{{ message.file.url }}" target="_blank" rel="noopener">&#128206; {{ message.file.name|cut:'messages/' }}</a>
+                        {% endif %}
+                    {% endif %}
+                    <small class="message-meta">{{ message.created_at|naturaltime}}</small>
+                </div>
+            </div>
         </div>
     {% else %}
-        <div class="message-row received" hx-swap-oob="beforeend" id="messages_list">
-            <div class="message-bubble">{{ message.content | linebreaksbr }} <small class="message-meta">{{ message.created_at|naturaltime}}</small></div>
+        <div hx-swap-oob="beforeend:#messages_list">
+            <div class="message-row received" id="message-{{ message.id }}">
+                <div class="message-bubble">
+                    {% if message.content %}{{ message.content|linebreaksbr }}{% endif %}
+                    {% if message.file %}
+                        {% if message.is_image %}
+                            <a class="d-block mt-2" href="{{ message.file.url }}" target="_blank" rel="noopener" aria-label="Open image {{ message.file.name }}">
+                                <img class="img-fluid rounded-3 shadow-sm chat-image" src="{{ message.file.url }}" alt="{{ message.file.name }}">
+                            </a>
+                        {% elif message.is_video %}
+                            <div class="chat-video-wrap">
+                                <video class="chat-video" controls preload="metadata">
+                                    <source src="{{ message.file.url }}">
+                                    <a class="file-link" href="{{ message.file.url }}" target="_blank" rel="noopener">Open {{ message.file.name }}</a>
+                                </video>
+                            </div>
+                        {% elif message.is_audio %}
+                            <div class="chat-audio" data-audio-player>
+                                <button class="audio-toggle" type="button" aria-label="Play audio">&#9654;</button>
+                                <div class="audio-track">
+                                    <div class="audio-wave" aria-hidden="true">{% for bar in "12345678901234567890" %}<span></span>{% endfor %}</div>
+                                    <input class="audio-progress" type="range" min="0" max="100" value="0" step="1" aria-label="Audio progress">
+                                </div>
+                                <span class="audio-time">0:00</span>
+                                <audio class="audio-source" preload="metadata">
+                                    <source src="{{ message.file.url }}">
+                                    <a class="file-link" href="{{ message.file.url }}" target="_blank" rel="noopener">Open {{ message.file.name }}</a>
+                                </audio>
+                            </div>
+                        {% else %}
+                            <a class="file-link d-block mt-2" href="{{ message.file.url }}" target="_blank" rel="noopener">&#128206; {{ message.file.name|cut:'messages/' }}</a>
+                        {% endif %}
+                    {% endif %}
+                    <small class="message-meta">{{ message.created_at|naturaltime}}</small>
+                </div>
+            </div>
         </div>
     {% endif %}
 {% endpartialdef %}
+

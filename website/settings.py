@@ -43,8 +43,8 @@ INSTALLED_APPS = [
     'accounts',
     'chats',
     'friends',
-    'notifications',
     'widget_tweaks',
+    'django_q'
 
 ]
 
@@ -161,4 +161,19 @@ CHANNEL_LAYERS = {
     'default':{
         'BACKEND':'channels.layers.InMemoryChannelLayer'
     }
+}
+
+
+MAILERS = {
+    "default":{
+        "BACKEND":"django.core.mail.backends.console.EmailBackend"
+    }
+}
+
+Q_CLUSTER = {
+    "name":"DjangoQ",
+    "workers":8,
+    "timeout":90,
+    "retry":120,
+    "orm":'default'
 }

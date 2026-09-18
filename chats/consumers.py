@@ -44,3 +44,7 @@ class IndividualChatConsumer(AsyncWebsocketConsumer):
         message_obj = await self.get_message(event.get('message_id'))
         html = render_to_string('partial/message-return.html#websocket-message', {'message': message_obj, 'is_sender': self.user.id == event.get('sender_id')})
         await self.send(html)
+
+
+
+
