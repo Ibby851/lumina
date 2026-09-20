@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-dr!dzsdz&22)vc1y7f8n7i^vy)f29(aqd1sljoh=m$vifl=l-8'
 CSRF_TRUSTED_ORIGINS = [
-    'lumina-io1w.onrender.com'
+    'https://lumina-io1w.onrender.com'
 ]
 
 
