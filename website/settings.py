@@ -26,14 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-dr!dzsdz&22)vc1y7f8n7i^vy)f29(aqd1sljoh=m$vifl=l-8'
 CSRF_TRUSTED_ORIGINS = [
-    'https://lumina-io1w.onrender.com'
+    'lumina-io1w.onrender.com'
 ]
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["https://lumina-io1w.onrender.com"]
+ALLOWED_HOSTS = ["lumina-io1w.onrender.com"]
 
 
 # Application definition
