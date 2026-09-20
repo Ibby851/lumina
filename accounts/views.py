@@ -24,11 +24,11 @@ def register(request):
     form = RegistrationForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
-        new_user = User.objects.create_user(username=data.get('username'), email=data.get('email'), password=data.get('password'), first_name=data.get('first_name'),last_name=data.get('last_name'), is_active=False)
+        new_user = User.objects.create_user(username=data.get('username'), email=data.get('email'), password=data.get('password'), first_name=data.get('first_name'),last_name=data.get('last_name'))
         Profile.objects.create(user=new_user)
         token = Token.objects.create(user=new_user, token=secrets.token_urlsafe(32))
-        url = reverse('accounts:verify_user',kwargs={'token':token.token})
-        send_verification_email(new_user.id, request.build_absolute_uri(url))
+        # url = reverse('accounts:verify_user',kwargs={'token':token.token})
+        # async_task(send_verification_email, new_user.id, request.build_absolute_uri(url))
         return render(request,'accounts/email_sent_message.html')
 
     return render(request, 'accounts/register.html', {'form':form})
@@ -58,8 +58,8 @@ def reset_password(request):
             if User.objects.filter(email=email).exists():
                 user = User.objects.get(email=email)
                 reset_token = PasswordResetToken.objects.create(user=user, token=secrets.token_urlsafe(32))
-                url = reverse('accounts:password_reset_input', kwargs={'token':reset_token.token})
-                send_password_reset_email, user.id, request.build_absolute_uri(url)
+                # url = reverse('accounts:password_reset_input', kwargs={'token':reset_token.token})
+                # async_task(send_password_reset_email, user.id, request.build_absolute_uri(url))
                 return render(request,'accounts/password_reset_link_sent_success.html')
                 
             else:
